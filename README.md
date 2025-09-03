@@ -856,17 +856,29 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 ---
 
+## 👨‍💻 Author & Credits
+
+**YARA4WAZUH** was developed by **Paolo Caparrelli** at **GOLINE SA**, a leading cybersecurity company specializing in enterprise security solutions.
+
+### About the Author
+- **Paolo Caparrelli** - Security Engineer & Developer
+- **Company**: [GOLINE SA](https://www.goline.ch)
+- **LinkedIn**: [Paolo Caparrelli](https://www.linkedin.com/in/paolo-caparrelli/)
+- **GitHub**: [@paolokappa](https://github.com/paolokappa)
+
+### About GOLINE SA
+GOLINE SA is a Swiss cybersecurity company providing advanced threat detection, security monitoring, and incident response services. With expertise in SIEM integration, malware analysis, and security automation, GOLINE SA helps organizations protect their critical infrastructure.
+
+---
+
 <div align="center">
 
 **🛡️ YARA4WAZUH - Enterprise Threat Detection Made Simple 🛡️**
 
 *Protecting your infrastructure, one scan at a time*
 
-[![GitHub stars](https://img.shields.io/github/stars/paolokappa/yara4wazuh?style=social)](https://github.com/paolokappa/yara4wazuh/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/paolokappa/yara4wazuh?style=social)](https://github.com/paolokappa/yara4wazuh/network/members)
-[![GitHub watchers](https://img.shields.io/github/watchers/paolokappa/yara4wazuh?style=social)](https://github.com/paolokappa/yara4wazuh/watchers)
-[![Twitter Follow](https://img.shields.io/twitter/follow/yara4wazuh?style=social)](https://twitter.com/yara4wazuh)
+Developed with ❤️ by **Paolo Caparrelli** at **GOLINE SA**
 
-[Website](https://yara4wazuh.io) • [Documentation](https://docs.yara4wazuh.io) • [Community](https://community.yara4wazuh.io)
+© 2025 GOLINE SA - Switzerland
 
 </div>
