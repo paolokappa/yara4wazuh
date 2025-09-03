@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA-Wazuh Weekly Security Report - HTML Version
+# Version: 13.7
+# Build: 2024-09-03
 # v13.0 - Using common header/footer functions
 
 # Source common functions

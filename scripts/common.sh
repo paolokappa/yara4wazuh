@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA4WAZUH Common Functions and Variables
+# Version: 13.7
+# Build: 2024-09-03
 # Company: GOLINE SA - www.goline.ch
 # This file contains shared functions and variables used by all YARA4WAZUH scripts
 

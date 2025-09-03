@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA Rules Optimization Script
+# Version: 13.7
+# Build: 2024-09-03
 # Removes duplicate rules and ensures base rules are present
 # Company: GOLINE SA - www.goline.ch
 

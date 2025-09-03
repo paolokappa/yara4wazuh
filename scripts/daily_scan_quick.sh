@@ -1,7 +1,7 @@
 #!/bin/bash
 # YARA Quick Daily Security Scan - Limited scope for faster execution
 # Company: GOLINE SA - www.goline.ch
-# Version: 2.1 - With improved HTML formatting
+# Version: 13.7
 
 # Source common functions
 source /opt/yara/scripts/common.sh

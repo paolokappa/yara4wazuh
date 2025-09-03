@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA-Wazuh Status Check Script - v12.15
+# Version: 13.7
+# Build: 2024-09-03
 # Fixed to display infected files in proper ASCII table format
 # Shows actual rule count (2882) not just file count (26)
 

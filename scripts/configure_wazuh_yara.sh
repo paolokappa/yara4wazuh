@@ -1,5 +1,7 @@
 #!/bin/bash
 # Configure Wazuh 4.12 YARA Integration - Fixed Version
+# Version: 13.7
+# Build: 2024-09-03
 # Company: GOLINE SA - www.goline.ch
 # This version properly configures FIM without invalid YARA elements
 

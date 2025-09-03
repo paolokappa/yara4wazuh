@@ -2,7 +2,7 @@
 # YARA Daily Security Scan
 # Scans critical system directories for threats
 # Company: GOLINE SA - www.goline.ch
-# Version: 2.0 - With email alerts for threats
+# Version: 13.7
 
 # Source common functions
 source /opt/yara/scripts/common.sh

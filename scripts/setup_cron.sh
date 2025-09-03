@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA-Wazuh Cron Setup Script
+# Version: 13.7
+# Build: 2024-09-03
 # Configures all scheduled tasks
 # Company: GOLINE SA - www.goline.ch
 

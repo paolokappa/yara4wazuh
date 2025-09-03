@@ -1,5 +1,7 @@
 #!/bin/bash
 # Verify all report scripts use common header/footer
+# Version: 13.7
+# Build: 2024-09-03
 # Company: GOLINE SA - www.goline.ch
 
 echo "========================================="

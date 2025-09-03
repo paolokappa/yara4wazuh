@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA Log Cleanup Script
+# Version: 13.7
+# Build: 2024-09-03
 # Removes old log files to prevent disk space issues
 # Company: GOLINE SA - www.goline.ch
 

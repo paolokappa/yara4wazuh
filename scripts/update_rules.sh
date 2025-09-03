@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA Rules Update Script
+# Version: 13.7
+# Build: 2024-09-03
 # Downloads and updates YARA rules from various sources
 # Company: GOLINE SA - www.goline.ch
 

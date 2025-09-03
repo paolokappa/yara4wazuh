@@ -1,7 +1,7 @@
 #!/bin/bash
 # YARA-Wazuh Integration Status Check
 # Company: GOLINE SA - www.goline.ch
-# Version: 1.0
+# Version: 13.7
 
 source /opt/yara/scripts/common.sh
 

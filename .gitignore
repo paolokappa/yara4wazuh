@@ -30,6 +30,11 @@ CLAUDE.md
 *.claude*
 prepare_for_github.sh
 
+# Internal documentation (CONFIDENTIAL)
+*_INTERNAL.md
+PROJECT_DOCUMENTATION_INTERNAL.md
+CHANGELOG_INTERNAL.md
+
 # IDE and workspace
 *.code-workspace
 .vscode/
@@ -51,6 +56,16 @@ update_all_from_github.sh
 *test*.sh
 *safe*.sh
 *update_all*.sh
+
+# Security and vault files
+.vault/
+credentials_manager.sh
+secure_update_all.sh
+*credentials*
+*vault*
+*.enc
+*.key
+*.salt
 
 # Test files
 test_*

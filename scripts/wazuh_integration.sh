@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA-Wazuh Integration Script
+# Version: 13.7
+# Build: 2024-09-03
 # Configures YARA active response for Wazuh
 # Company: GOLINE SA - www.goline.ch
 

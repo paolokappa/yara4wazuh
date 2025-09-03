@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA4WAZUH Remote Migration Script v13.1
+# Version: 13.7
+# Build: 2024-09-03
 # Official script to migrate YARA4WAZUH to remote servers
 # Company: GOLINE SA - www.goline.ch
 # 

@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA-Wazuh Health Check Script
+# Version: 13.7
+# Build: 2024-09-03
 # Performs comprehensive system health check and sends HTML report
 # Company: GOLINE SA - www.goline.ch
 

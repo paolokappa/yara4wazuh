@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA4WAZUH Remote Migration Script v13.6 - Fixed systemd override issue
+# Version: 13.7
+# Build: 2024-09-03
 # Full dependency checking, automatic fixes, and comprehensive error handling
 # Company: GOLINE SA - www.goline.ch
 # 

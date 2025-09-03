@@ -1,5 +1,7 @@
 #!/bin/bash
 # YARA Quarantine Cleanup Script
+# Version: 13.7
+# Build: 2024-09-03
 # Removes quarantined files older than 30 days
 # Company: GOLINE SA - www.goline.ch
 
