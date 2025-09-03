@@ -38,6 +38,15 @@ prepare_for_github.sh
 *.swo
 *~
 
+# Server lists and deployment scripts with credentials
+servers.txt
+test_servers.sh
+test_all_servers.sh
+deploy_to_servers.sh
+safe_copy_to_servers.sh
+*_servers.sh
+*servers*.txt
+
 # Test files
 test_*
 *.test

@@ -1,13 +1,14 @@
 #!/bin/bash
-# YARA4WAZUH Management Script v13.6
+# YARA4WAZUH Management Script v13.7
 # Enterprise Security Platform for YARA and Wazuh Integration
 # 
 # Author: YARA4WAZUH Contributors
 # Project: https://github.com/paolokappa/yara4wazuh
-# Version: 13.6
+# Version: 13.7
 # License: MIT
+# Build: 2024-09-03 - GitHub sync and hostname fixes
 
-readonly SCRIPT_VERSION="13.1"
+readonly SCRIPT_VERSION="13.7"
 readonly SCRIPT_NAME="yara4wazuh"
 
 # YARA version configuration
@@ -284,7 +285,7 @@ update_from_github() {
 <tr><td>Commit</td><td>$COMMIT_HASH</td></tr>
 <tr><td>Date</td><td>$COMMIT_DATE</td></tr>
 <tr><td>Backup Location</td><td>$BACKUP_DIR</td></tr>
-<tr><td>Hostname</td><td>$(hostname)</td></tr>
+<tr><td>Hostname</td><td>$(hostname -f)</td></tr>
 </table>
 
 <br>
@@ -540,7 +541,7 @@ main_install() {
 <br>
 <div class="alert alert-success">
 <strong>🎉 Installation Successful!</strong>
-<p>YARA4WAZUH v${SCRIPT_VERSION} has been successfully installed on $(hostname).</p>
+<p>YARA4WAZUH v${SCRIPT_VERSION} has been successfully installed on $(hostname -f).</p>
 </div>
 
 <br>
@@ -750,7 +751,7 @@ REPORT_EOF
     
     # Replace placeholders
     sed -i "s/REPORT_DATE/$(date '+%Y-%m-%d %H:%M:%S')/g" "$TEMP_HTML"
-    sed -i "s/REPORT_HOST/$(hostname)/g" "$TEMP_HTML"
+    sed -i "s/REPORT_HOST/$(hostname -f)/g" "$TEMP_HTML"
     sed -i "s/SCRIPT_COUNT/${#required_scripts[@]}/g" "$TEMP_HTML"
     sed -i "s|BACKUP_LOC|$BACKUP_DIR|g" "$TEMP_HTML"
     
@@ -769,7 +770,7 @@ REPORT_EOF
 <table class="data-table">
 <tr><th>Property</th><th>Value</th></tr>
 <tr><td>📅 Update Date</td><td>$(date '+%Y-%m-%d %H:%M:%S')</td></tr>
-<tr><td>🖥️ Hostname</td><td>$(hostname)</td></tr>
+<tr><td>🖥️ Hostname</td><td>$(hostname -f)</td></tr>
 <tr><td>📊 Scripts Verified</td><td>${#required_scripts[@]}</td></tr>
 <tr><td>💾 Backup Location</td><td>$BACKUP_DIR</td></tr>
 <tr><td>✅ Status</td><td style="color: #28a745; font-weight: bold;">SUCCESS</td></tr>
