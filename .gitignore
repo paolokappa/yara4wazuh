@@ -1,0 +1,50 @@
+# Directories
+rules/
+backup/
+logs/
+reports/
+quarantine/
+
+# Local configuration
+config.local
+.env
+
+# Sensitive files
+ssh_*
+COMPLETE_SERVER_*
+MASTER_*
+*_16_servers*
+*.credentials*
+*.key
+*.pem
+
+# Archives and logs
+*.tar.gz
+*.zip
+*.log
+*.bak
+
+# Claude AI files
+CLAUDE.md
+.claude/
+*.claude*
+prepare_for_github.sh
+
+# IDE and workspace
+*.code-workspace
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test files
+test_*
+*.test
+eicar*
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+/var/tmp/

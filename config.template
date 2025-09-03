@@ -1,0 +1,28 @@
+#!/bin/bash
+# CONFIGURATION TEMPLATE - Copy to config.local and customize
+# This file is a template for local configuration
+
+# Company Information
+export COMPANY_NAME="Your Company Name"
+export COMPANY_DOMAIN="your-domain.com"
+export COMPANY_WEBSITE="www.your-domain.com"
+
+# Email Configuration
+export EMAIL_TO="security@your-domain.com"
+export EMAIL_FROM_DOMAIN="your-domain.com"
+
+# Server Configuration
+export MASTER_SERVER="master.your-domain.com"
+export BACKUP_SERVER="backup.your-domain.com"
+
+# Server List (for SSH configuration)
+export SERVER_LIST=(
+    "server1.your-domain.com"
+    "server2.your-domain.com"
+    "server3.your-domain.com"
+    # Add your servers here
+)
+
+# GitHub Repository
+export GITHUB_REPO="https://github.com/YOUR_USERNAME/yara4wazuh.git"
+export GITHUB_BRANCH="main"
