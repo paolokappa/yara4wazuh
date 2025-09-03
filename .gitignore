@@ -44,8 +44,13 @@ test_servers.sh
 test_all_servers.sh
 deploy_to_servers.sh
 safe_copy_to_servers.sh
+update_all_from_github.sh
 *_servers.sh
 *servers*.txt
+*deploy*.sh
+*test*.sh
+*safe*.sh
+*update_all*.sh
 
 # Test files
 test_*
