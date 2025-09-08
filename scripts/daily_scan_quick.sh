@@ -14,7 +14,10 @@ declare -A THREAT_FILES
 declare -A THREAT_RULES
 
 log_section "Starting Quick YARA Security Scan"
-log_info "Using $(count_yara_rules) YARA rules" | tee -a "$LOG_FILE"
+
+# Get and display rules summary
+RULES_SUMMARY=$(get_rules_summary)
+log_info "YARA Engine: $RULES_SUMMARY" | tee -a "$LOG_FILE"
 
 # Limited directories for quick scan
 SCAN_DIRS="/tmp"
@@ -50,15 +53,16 @@ for dir in $SCAN_DIRS; do
         # Run YARA only on filtered files with Linux-focused rules
         SCAN_OUTPUT=""
         if [ -s "$TEMP_FILE_LIST" ]; then
-            # Create Linux-focused rules for quick scan
+            # Use optimized rules for quick scan
             QUICK_RULES="/tmp/quick_linux_rules_$$.yar"
             
-            # Use only most critical Linux rules for speed
-            cat "$YARA_RULES_DIR"/base_rules.yar \
-                "$YARA_RULES_DIR"/Linux_*.yar \
-                "$YARA_RULES_DIR"/*[Mm]iner*.yar \
-                "$YARA_RULES_DIR"/*[Ww]ebshell*.yar 2>/dev/null | \
-                grep -v "Windows\|Win32\|Win64" | head -10000 > "$QUICK_RULES" 2>/dev/null
+            # Check if optimized rules exist
+            if [ ! -f "$YARA_RULES_DIR/optimized.yar" ]; then
+                /opt/yara/scripts/optimize_rules.sh >/dev/null 2>&1
+            fi
+            
+            # Use optimized rules
+            cp "$YARA_RULES_DIR/optimized.yar" "$QUICK_RULES" 2>/dev/null
             
             if [ -s "$QUICK_RULES" ]; then
                 RULE_COUNT=$(grep -c "^rule " "$QUICK_RULES" 2>/dev/null || echo "0")
@@ -93,7 +97,8 @@ for dir in $SCAN_DIRS; do
                 if [[ -n "$line" ]] && [[ ! "$line" =~ ^warning: ]]; then
                     # Format: rule_name file_path
                     rule_name=$(echo "$line" | awk '{print $1}')
-                    file_path=$(echo "$line" | awk '{print $2}')
+                    # Remove any trailing whitespace, newlines, or \n literal from file_path
+                    file_path=$(echo "$line" | awk '{print $2}' | sed 's/\\n$//' | tr -d '\n' | tr -d '\r' | sed 's/[[:space:]]*$//')
                     
                     if [[ -n "$rule_name" ]] && [[ -n "$file_path" ]]; then
                         # Store in associative arrays for organized display
@@ -168,7 +173,43 @@ EOF
 <tr><th>Component</th><th>Status</th><th>Details</th></tr>
 <tr><td>📅 Scan Time</td><td><span class="badge badge-info">$(date '+%H:%M:%S')</span></td><td>$(date '+%Y-%m-%d')</td></tr>
 <tr><td>🖥️ Host System</td><td><span class="badge badge-success">✓ Active</span></td><td>$(hostname)</td></tr>
-<tr><td>🛡️ YARA Engine</td><td><span class="badge badge-success">✓ Loaded</span></td><td>$(count_yara_rules) detection rules</td></tr>
+<tr><td>🛡️ YARA Engine</td><td><span class="badge badge-success">✓ Loaded</span></td><td><strong>$(count_yara_rules) total detection rules</strong></td></tr>
+EOF
+
+    # Add dynamic rule categories rows
+    trojan=$(count_rules_by_pattern "Linux_Trojan")
+    exploit=$(count_rules_by_pattern "Linux_Exploit")
+    crypto=$(count_rules_by_pattern "Linux_Cryptominer")
+    ransom=$(count_rules_by_pattern "Linux_Ransomware")
+    rootkit=$(count_rules_by_pattern "Linux_Rootkit")
+    backdoor=$(count_rules_by_pattern "Linux_Backdoor")
+    webshell=$(count_rules_by_pattern "Linux_Webshell")
+    hacktool=$(count_rules_by_pattern "Linux_Hacktool")
+    mirai=$(count_rules_by_pattern "[Mm]irai")
+    xz=$(count_rules_by_pattern "CVE.2024.3094\|XZ.*[Bb]ackdoor\|xz_util")
+    pwnkit=$(count_rules_by_pattern "CVE.2021.4034\|PwnKit\|pkexec")
+    ssh=$(count_rules_by_pattern "SSH\|ssh.*brute\|ssh.*backdoor")
+    
+    # Main malware categories
+    [[ $trojan -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Trojan</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$trojan</strong> rules - Linux trojan detection</td></tr>" >> "$TEMP_HTML"
+    [[ $exploit -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Exploit</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$exploit</strong> rules - Vulnerability exploits</td></tr>" >> "$TEMP_HTML"
+    [[ $crypto -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Cryptominer</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$crypto</strong> rules - Cryptocurrency miners</td></tr>" >> "$TEMP_HTML"
+    [[ $ransom -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Ransomware</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$ransom</strong> rules - Ransomware families</td></tr>" >> "$TEMP_HTML"
+    [[ $rootkit -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Rootkit</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$rootkit</strong> rules - Kernel/userspace rootkits</td></tr>" >> "$TEMP_HTML"
+    [[ $backdoor -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Backdoor</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$backdoor</strong> rules - Backdoor detection</td></tr>" >> "$TEMP_HTML"
+    [[ $webshell -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Webshell</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$webshell</strong> rules - Web shell detection</td></tr>" >> "$TEMP_HTML"
+    [[ $hacktool -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Hacktool</td><td><span class=\"badge badge-info\">Active</span></td><td><strong>$hacktool</strong> rules - Hacking tools</td></tr>" >> "$TEMP_HTML"
+    
+    # Critical threats
+    [[ $xz -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ CVE-2024-3094</td><td><span class=\"badge badge-danger\">Critical</span></td><td><strong>$xz</strong> rules - XZ backdoor detection</td></tr>" >> "$TEMP_HTML"
+    [[ $pwnkit -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ CVE-2021-4034</td><td><span class=\"badge badge-danger\">Critical</span></td><td><strong>$pwnkit</strong> rules - PwnKit exploit</td></tr>" >> "$TEMP_HTML"
+    [[ $mirai -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ Mirai Botnet</td><td><span class=\"badge badge-warning\">High</span></td><td><strong>$mirai</strong> rules - IoT/DMZ botnet</td></tr>" >> "$TEMP_HTML"
+    [[ $ssh -gt 0 ]] && echo "<tr><td>&nbsp;&nbsp;↳ SSH Attack</td><td><span class=\"badge badge-warning\">High</span></td><td><strong>$ssh</strong> rules - SSH bruteforce/backdoor</td></tr>" >> "$TEMP_HTML"
+    
+    # Feed sources
+    echo "<tr><td>📚 Feed Sources</td><td><span class=\"badge badge-success\">✓ Active</span></td><td>$(get_feed_sources)</td></tr>" >> "$TEMP_HTML"
+    
+    cat >> "$TEMP_HTML" << EOF
 <tr><td>📁 Scan Coverage</td><td><span class="badge badge-warning">Quick Scan</span></td><td>$(echo $SCAN_DIRS | tr ' ' ', ')</td></tr>
 <tr><td>🎯 Detection Rate</td><td><span class="badge $([ $THREAT_COUNT -gt 0 ] && echo "badge-danger" || echo "badge-success")">$([ $THREAT_COUNT -gt 0 ] && echo "⚠️ Threats Found" || echo "✓ Clean")</span></td><td style="font-weight: bold;">$THREAT_COUNT threat(s) identified</td></tr>
 </table>
@@ -179,7 +220,7 @@ EOF
 </div>
 <div class="info-box">
 <table class="data-table">
-<tr><th>📁 File Path</th><th>🦠 Threat Type</th><th>📍 Location</th></tr>
+<tr><th>📁 File Name</th><th>🦠 Threat Type</th><th>📍 Location</th><th>📝 Description</th></tr>
 EOF
     
     if [ ${#THREAT_FILES[@]} -gt 0 ]; then
@@ -211,7 +252,10 @@ EOF
             location=$(dirname "$file_path")
             filename=$(basename "$file_path")
             
-            echo "<tr><td title=\"$file_path\">$filename</td><td style=\"color: #dc3545; font-weight: bold;\">$threat_display</td><td>$location</td></tr>" >> "$TEMP_HTML"
+            # Get threat description
+            threat_desc=$(get_threat_description "$rule_name")
+            
+            echo "<tr><td title=\"Full path: $file_path\">$filename</td><td style=\"color: #dc3545; font-weight: bold;\">$threat_display</td><td>$location</td><td style=\"font-size: 12px; color: #666;\">$threat_desc</td></tr>" >> "$TEMP_HTML"
         done
     else
         echo "<tr><td colspan=\"3\" style=\"text-align: center; color: #28a745;\">✅ No threats detected - System is clean</td></tr>" >> "$TEMP_HTML"

@@ -59,12 +59,180 @@ get_wazuh_agent_id() {
 
 # Count YARA rules (returns ACTIVE/VALID rules only)
 count_yara_rules() {
-    # Return the actual count of active YARA rules (not in subdirectories)
-    if [[ -d /opt/yara/rules ]]; then
+    # Return count of rules in optimized file if it exists
+    if [[ -f /opt/yara/rules/optimized.yar ]]; then
+        grep -c "^rule " /opt/yara/rules/optimized.yar 2>/dev/null || echo "0"
+    elif [[ -d /opt/yara/rules ]]; then
+        # Otherwise count files as before
         find /opt/yara/rules -maxdepth 1 -type f \( -name "*.yar" -o -name "*.yara" \) 2>/dev/null | wc -l
     else
         echo "0"
     fi
+}
+
+# Count rules by category (dynamic)
+count_rules_by_pattern() {
+    local pattern=$1
+    local file="${2:-/opt/yara/rules/optimized.yar}"
+    
+    if [[ -f "$file" ]]; then
+        grep -c "$pattern" "$file" 2>/dev/null || echo "0"
+    else
+        echo "0"
+    fi
+}
+
+# Get rules summary for display (dynamic)
+get_rules_summary() {
+    local file="${1:-/opt/yara/rules/optimized.yar}"
+    
+    if [[ ! -f "$file" ]]; then
+        echo "No rules loaded"
+        return 1
+    fi
+    
+    # Count major categories
+    local total=$(grep -c "^rule " "$file" 2>/dev/null || echo "0")
+    local trojan=$(count_rules_by_pattern "Linux_Trojan" "$file")
+    local exploit=$(count_rules_by_pattern "Linux_Exploit" "$file") 
+    local crypto=$(count_rules_by_pattern "Linux_Cryptominer" "$file")
+    local ransom=$(count_rules_by_pattern "Linux_Ransomware" "$file")
+    local mirai=$(count_rules_by_pattern "[Mm]irai" "$file")
+    local xz=$(count_rules_by_pattern "CVE.2024.3094\|XZ.*[Bb]ackdoor\|xz_util" "$file")
+    
+    # Build summary string
+    local summary="$total rules ("
+    local first=true
+    
+    [[ $trojan -gt 0 ]] && { [[ $first == false ]] && summary+=", "; summary+="${trojan} Trojan"; first=false; }
+    [[ $exploit -gt 0 ]] && { [[ $first == false ]] && summary+=", "; summary+="${exploit} Exploit"; first=false; }
+    [[ $crypto -gt 0 ]] && { [[ $first == false ]] && summary+=", "; summary+="${crypto} Cryptominer"; first=false; }
+    [[ $ransom -gt 0 ]] && { [[ $first == false ]] && summary+=", "; summary+="${ransom} Ransomware"; first=false; }
+    [[ $mirai -gt 0 ]] && { [[ $first == false ]] && summary+=", "; summary+="${mirai} Mirai"; first=false; }
+    [[ $xz -gt 0 ]] && { [[ $first == false ]] && summary+=", "; summary+="${xz} XZ-backdoor"; first=false; }
+    
+    summary+=")"
+    echo "$summary"
+}
+
+# Get complete rules detail with all feeds (dynamic)
+get_rules_detail() {
+    local file="${1:-/opt/yara/rules/optimized.yar}"
+    
+    if [[ ! -f "$file" ]]; then
+        echo "No rules loaded"
+        return 1
+    fi
+    
+    # Count all categories
+    local total=$(grep -c "^rule " "$file" 2>/dev/null || echo "0")
+    local trojan=$(count_rules_by_pattern "Linux_Trojan" "$file")
+    local exploit=$(count_rules_by_pattern "Linux_Exploit" "$file") 
+    local crypto=$(count_rules_by_pattern "Linux_Cryptominer" "$file")
+    local ransom=$(count_rules_by_pattern "Linux_Ransomware" "$file")
+    local rootkit=$(count_rules_by_pattern "Linux_Rootkit" "$file")
+    local backdoor=$(count_rules_by_pattern "Linux_Backdoor" "$file")
+    local webshell=$(count_rules_by_pattern "Linux_Webshell" "$file")
+    local hacktool=$(count_rules_by_pattern "Linux_Hacktool" "$file")
+    local virus=$(count_rules_by_pattern "Linux_Virus" "$file")
+    
+    # Count special threats
+    local mirai=$(count_rules_by_pattern "[Mm]irai" "$file")
+    local xz=$(count_rules_by_pattern "CVE.2024.3094\|XZ.*[Bb]ackdoor\|xz_util" "$file")
+    local pwnkit=$(count_rules_by_pattern "CVE.2021.4034\|PwnKit\|pkexec" "$file")
+    local ssh=$(count_rules_by_pattern "SSH\|ssh.*brute\|ssh.*backdoor" "$file")
+    
+    # Build detailed string with better formatting
+    local detail="<strong>$total detection rules</strong><br>"
+    detail+="<small>"
+    detail+="<strong>Malware:</strong> "
+    [[ $trojan -gt 0 ]] && detail+="Trojan:$trojan "
+    [[ $exploit -gt 0 ]] && detail+="Exploit:$exploit "
+    [[ $crypto -gt 0 ]] && detail+="Cryptominer:$crypto "
+    [[ $ransom -gt 0 ]] && detail+="Ransomware:$ransom "
+    [[ $rootkit -gt 0 ]] && detail+="Rootkit:$rootkit "
+    [[ $backdoor -gt 0 ]] && detail+="Backdoor:$backdoor "
+    [[ $webshell -gt 0 ]] && detail+="Webshell:$webshell "
+    [[ $hacktool -gt 0 ]] && detail+="Hacktool:$hacktool "
+    [[ $virus -gt 0 ]] && detail+="Virus:$virus "
+    detail+="<br>"
+    detail+="<strong>Critical CVE:</strong> "
+    [[ $xz -gt 0 ]] && detail+="CVE-2024-3094(XZ):$xz "
+    [[ $pwnkit -gt 0 ]] && detail+="CVE-2021-4034(PwnKit):$pwnkit "
+    [[ $mirai -gt 0 ]] && detail+="Mirai:$mirai "
+    [[ $ssh -gt 0 ]] && detail+="SSH-Attack:$ssh "
+    detail+="<br>"
+    detail+="<strong>Sources:</strong> Elastic, Neo23x0, GOLINE"
+    detail+="</small>"
+    
+    echo "$detail"
+}
+
+# Get feed sources summary (dynamic)
+get_feed_sources() {
+    # Count different feed types
+    local elastic_count=$(cd /opt/yara/rules && ls Linux_*.yar 2>/dev/null | wc -l)
+    local apt_count=$(cd /opt/yara/rules && ls APT_*.yar 2>/dev/null | wc -l)
+    local ransom_count=$(cd /opt/yara/rules && ls | grep -i ransom | wc -l)
+    local trojan_count=$(cd /opt/yara/rules && ls | grep -i trojan | wc -l)
+    local exploit_count=$(cd /opt/yara/rules && ls | grep -i exploit | wc -l)
+    local backdoor_count=$(cd /opt/yara/rules && ls | grep -i backdoor | wc -l)
+    local webshell_count=$(cd /opt/yara/rules && ls | grep -i webshell | wc -l)
+    local malware_count=$(cd /opt/yara/rules && ls | grep -i malware | wc -l)
+    local total_files=$(cd /opt/yara/rules && ls *.yar 2>/dev/null | wc -l)
+    
+    local sources=""
+    [[ $elastic_count -gt 0 ]] && sources+="Elastic ($elastic_count), "
+    [[ $apt_count -gt 0 ]] && sources+="APT ($apt_count), "
+    [[ $ransom_count -gt 0 ]] && sources+="Ransomware ($ransom_count), "
+    [[ $trojan_count -gt 0 ]] && sources+="Trojan ($trojan_count), "
+    [[ $exploit_count -gt 0 ]] && sources+="Exploit ($exploit_count), "
+    [[ $backdoor_count -gt 0 ]] && sources+="Backdoor ($backdoor_count), "
+    [[ $webshell_count -gt 0 ]] && sources+="Webshell ($webshell_count), "
+    [[ $malware_count -gt 0 ]] && sources+="Malware ($malware_count), "
+    sources+="Total: $total_files files"
+    
+    echo "$sources"
+}
+
+# Get rule categories with counts (dynamic)
+get_rule_categories() {
+    local file="${1:-/opt/yara/rules/optimized.yar}"
+    
+    if [[ ! -f "$file" ]]; then
+        echo "No rules file found"
+        return 1
+    fi
+    
+    # Count major categories
+    local trojan_count=$(count_rules_by_pattern "Linux_Trojan" "$file")
+    local exploit_count=$(count_rules_by_pattern "Linux_Exploit" "$file")
+    local crypto_count=$(count_rules_by_pattern "Linux_Cryptominer" "$file")
+    local ransom_count=$(count_rules_by_pattern "Linux_Ransomware" "$file")
+    local rootkit_count=$(count_rules_by_pattern "Linux_Rootkit" "$file")
+    local backdoor_count=$(count_rules_by_pattern "Linux_Backdoor" "$file")
+    local webshell_count=$(count_rules_by_pattern "Linux_Webshell" "$file")
+    local hacktool_count=$(count_rules_by_pattern "Linux_Hacktool" "$file")
+    
+    # Count CVE and special threats
+    local xz_count=$(count_rules_by_pattern "CVE.2024.3094\|XZ.*[Bb]ackdoor\|xz_util" "$file")
+    local pwnkit_count=$(count_rules_by_pattern "CVE.2021.4034\|PwnKit\|pkexec" "$file")
+    local mirai_count=$(count_rules_by_pattern "[Mm]irai" "$file")
+    local ssh_count=$(count_rules_by_pattern "SSH\|ssh.*brute\|ssh.*backdoor" "$file")
+    
+    # Output as associative array format
+    echo "TROJAN:$trojan_count"
+    echo "EXPLOIT:$exploit_count"
+    echo "CRYPTOMINER:$crypto_count"
+    echo "RANSOMWARE:$ransom_count"
+    echo "ROOTKIT:$rootkit_count"
+    echo "BACKDOOR:$backdoor_count"
+    echo "WEBSHELL:$webshell_count"
+    echo "HACKTOOL:$hacktool_count"
+    echo "XZ_BACKDOOR:$xz_count"
+    echo "PWNKIT:$pwnkit_count"
+    echo "MIRAI:$mirai_count"
+    echo "SSH_ATTACK:$ssh_count"
 }
 
 # Check if Wazuh agent is running
@@ -179,11 +347,18 @@ EOF
 create_html_header() {
     local report_title="${1:-YARA Security Report}"
     local script_name="${2:-$(basename $0)}"
-    local script_version="${3:-13.1}"
+    # Get version dynamically or use provided parameter
+    local script_version="${3:-$(get_yara_version)}"
     
     # Project information
     local project_name="Yara4Wazuh"
-    local project_version="v13.1"
+    # Read version dynamically from VERSION file
+    local version_file="/opt/yara/VERSION"
+    if [[ -f "$version_file" ]]; then
+        local project_version="v$(cat "$version_file" | tr -d '\n')"
+    else
+        local project_version="v13.8"  # Fallback version
+    fi
     
     # Get system information
     local os_name=$(grep "^PRETTY_NAME" /etc/os-release 2>/dev/null | cut -d'"' -f2 || uname -s)
@@ -291,6 +466,63 @@ Phone: +41 91 2507650 | Email: soc@goline.ch<br>
 </body>
 </html>
 EOF
+}
+
+# Get current Yara4Wazuh version
+get_yara_version() {
+    local version_file="/opt/yara/VERSION"
+    if [[ -f "$version_file" ]]; then
+        cat "$version_file" | tr -d '\n'
+    else
+        echo "13.8"  # Fallback version
+    fi
+}
+
+# Get threat description based on threat type
+get_threat_description() {
+    local threat_type="${1:-Unknown}"
+    
+    case "$threat_type" in
+        *Log_Cleaner*)
+            echo "Malware designed to hide traces by deleting or modifying system logs. Often used after compromise to evade detection."
+            ;;
+        *Trojan*)
+            echo "Malicious software disguised as legitimate program. Can provide backdoor access, steal data, or download additional malware."
+            ;;
+        *Cryptominer*)
+            echo "Cryptocurrency mining malware that uses system resources to mine digital currency without authorization."
+            ;;
+        *Ransomware*)
+            echo "Malware that encrypts files and demands payment for decryption. Can cause severe data loss and operational disruption."
+            ;;
+        *Exploit*)
+            echo "Code that takes advantage of software vulnerabilities to gain unauthorized access or execute malicious commands."
+            ;;
+        *Backdoor*)
+            echo "Hidden method of bypassing authentication to gain remote access. Allows persistent unauthorized system control."
+            ;;
+        *Rootkit*)
+            echo "Advanced malware that hides its presence and maintains privileged access while evading detection mechanisms."
+            ;;
+        *Webshell*)
+            echo "Script uploaded to web server providing remote command execution. Often used for persistent web application compromise."
+            ;;
+        *XZ*)
+            echo "CVE-2024-3094: Critical backdoor in XZ Utils allowing remote code execution. Affects SSH authentication chain."
+            ;;
+        *Mirai*)
+            echo "IoT botnet malware that enslaves devices for DDoS attacks. Self-propagating through weak credentials."
+            ;;
+        *SSH*)
+            echo "SSH-related attack tool or bruteforcer. Attempts unauthorized access through SSH protocol exploitation."
+            ;;
+        *PwnKit*)
+            echo "CVE-2021-4034: Local privilege escalation vulnerability in PolicyKit. Allows any user to gain root privileges."
+            ;;
+        *)
+            echo "Suspicious file matching YARA detection rules. Further analysis recommended to determine exact threat nature."
+            ;;
+    esac
 }
 
 # Check Wazuh status

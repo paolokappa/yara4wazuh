@@ -75,7 +75,8 @@ generate_weekly_report() {
     
     # Create HTML report
     TEMP_HTML="/tmp/weekly_report_$(date +%Y%m%d_%H%M%S).html"
-    create_html_header "Weekly Security Report" "weekly_report_html.sh" "13.1" > "$TEMP_HTML"
+    # Use dynamic version from VERSION file
+    create_html_header "Weekly Security Report" "weekly_report_html.sh" > "$TEMP_HTML"
     
     cat >> "$TEMP_HTML" << EOF
 <div class="section-header">
