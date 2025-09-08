@@ -4,11 +4,11 @@
 # 
 # Author: YARA4WAZUH Contributors
 # Project: https://github.com/paolokappa/yara4wazuh
-# Version: 13.7
+# Version: 13.8
 # License: MIT
-# Build: 2024-09-03 - GitHub sync and hostname fixes
+# Build: 2025-09-08 - Linux-optimized, fixed false positives, enhanced quarantine
 
-readonly SCRIPT_VERSION="13.7"
+readonly SCRIPT_VERSION="13.8"
 readonly SCRIPT_NAME="yara4wazuh"
 
 # YARA version configuration
@@ -33,7 +33,7 @@ readonly YARA_RULES_DIR="${YARA_BASE_DIR}/rules"
 readonly YARA_SCRIPTS_DIR="${YARA_BASE_DIR}/scripts"
 readonly YARA_LOGS_DIR="/var/log/yara"
 readonly CONFIG_DIR="/etc/yara4wazuh"
-readonly QUARANTINE_DIR="/var/ossec/quarantine"
+readonly QUARANTINE_DIR="/opt/yara/quarantine"
 
 # Load local configuration if exists
 if [[ -f "/opt/yara/config.local" ]]; then
@@ -425,13 +425,16 @@ test_installation() {
     
     # Test EICAR
     log_info "Creating EICAR test file..."
-    echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > /tmp/eicar.test
+    # Create test file in logs directory to avoid detection in /tmp
+    local TEST_FILE="${YARA_LOGS_DIR}/eicar.test"
+    echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > "$TEST_FILE"
     
-    if yara "${YARA_RULES_DIR}/base_rules.yar" /tmp/eicar.test 2>/dev/null | grep -q "EICAR"; then
+    if yara "${YARA_RULES_DIR}/base_rules.yar" "$TEST_FILE" 2>/dev/null | grep -q "EICAR"; then
         log_info "[OK] EICAR detection successful"
-        rm -f /tmp/eicar.test
+        rm -f "$TEST_FILE"
     else
         log_warning "EICAR detection failed"
+        rm -f "$TEST_FILE"
     fi
     
     # Test Wazuh

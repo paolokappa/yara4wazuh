@@ -1,6 +1,6 @@
 # YARA4WAZUH - Advanced Threat Detection Platform
 
-[![Version](https://img.shields.io/badge/version-13.6-blue.svg)](https://github.com/paolokappa/yara4wazuh/releases)
+[![Version](https://img.shields.io/badge/version-13.8-blue.svg)](https://github.com/paolokappa/yara4wazuh/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![YARA](https://img.shields.io/badge/YARA-4.5.4-red.svg)](https://virustotal.github.io/yara/)
 [![Wazuh](https://img.shields.io/badge/Wazuh-4.x-orange.svg)](https://wazuh.com/)
@@ -49,7 +49,7 @@
 | **📊 Advanced Analytics** | Detailed threat intelligence and trending reports |
 | **🔌 Native Integration** | Seamless Wazuh SIEM integration |
 | **📧 Smart Notifications** | Priority-based email alerts with HTML formatting |
-| **🔄 Auto-updating Rules** | 2,700+ rules updated from global threat feeds |
+| **🔄 Auto-updating Rules** | 3,556 Linux-focused rules from global threat feeds |
 | **🎛️ Flexible Configuration** | Customizable scan schedules and thresholds |
 | **📡 Remote Management** | Deploy and manage across entire infrastructure |
 | **🔐 Secure Quarantine** | Isolated threat storage with forensic preservation |
@@ -180,10 +180,10 @@ graph TB
 |-----------|---------|-------------|
 | **YARA Engine** | 4.5.4 | High-performance pattern matching engine |
 | **Wazuh Agent** | 4.x | Enterprise SIEM integration |
-| **Rule Engine** | Latest | 2,700+ detection rules from global feeds |
-| **Scanner Module** | 13.6 | Multi-threaded scanning with optimization |
-| **Response Module** | 13.6 | Automated threat response and quarantine |
-| **Reporting Engine** | 13.6 | HTML reports and analytics |
+| **Rule Engine** | Latest | 3,556 Linux-focused rules from global feeds |
+| **Scanner Module** | 13.8 | Multi-threaded scanning with optimization |
+| **Response Module** | 13.8 | Automated threat response and quarantine |
+| **Reporting Engine** | 13.8 | HTML reports and analytics |
 | **Automation Scripts** | 23 scripts | Complete operational automation |
 
 ## 🚀 Installation
@@ -816,14 +816,22 @@ We welcome contributions from the security community!
 
 ## 🗺️ Roadmap
 
-### Version 14.0 (Q2 2025)
+### Version 15.0 (Q4 2025)
 - [ ] Machine learning threat classification
 - [ ] Cloud-native deployment (Kubernetes)
 - [ ] REST API for remote management
 - [ ] Web-based dashboard
 - [ ] Multi-tenancy support
 
-### Version 13.7 (Coming Soon)
+### Version 13.8 (Current - September 2025)
+- [x] Fixed false positive detection in /tmp
+- [x] Implemented secure quarantine system
+- [x] Linux-focused rule optimization (3,556 rules)
+- [x] Enhanced email reporting with quarantine details
+- [x] Pre-scan exclusion patterns
+- [x] SHA256 hashing for all threats
+
+### Version 14.0 (Coming Soon)
 - [ ] Automated threat hunting
 - [ ] Integration with MISP
 - [ ] Behavioral analysis engine

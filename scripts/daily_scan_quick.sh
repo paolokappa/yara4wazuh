@@ -28,8 +28,58 @@ for dir in $SCAN_DIRS; do
     if [[ -d "$dir" ]]; then
         log_info "Scanning $dir..." | tee -a "$LOG_FILE"
         
-        # Run YARA with shorter timeout for quick scan
-        SCAN_OUTPUT=$(timeout 30 find "$YARA_RULES_DIR" -maxdepth 1 -type f \( -name "*.yar" -o -name "*.yara" \) -exec yara {} "$dir" \; 2>&1 | grep -v -E "\.(yar|yara):|yara-rules/|/yara/|/tmp/yara|/opt/yara/rules|/opt/yara/backup" | head -100)
+        # Create a temporary file list excluding patterns that shouldn't be scanned
+        TEMP_FILE_LIST="/tmp/yara_quick_scan_files_$$"
+        
+        # Build find command with proper exclusions
+        FIND_CMD="find \"$dir\" -type f -maxdepth 3"
+        
+        # Add file pattern exclusions
+        for pattern in $EXCLUDE_PATTERNS; do
+            FIND_CMD="$FIND_CMD -not -name \"$pattern\""
+        done
+        
+        # Add directory exclusions
+        for exclude_dir in $EXCLUDE_DIRS; do
+            FIND_CMD="$FIND_CMD -not -path \"$exclude_dir/*\""
+        done
+        
+        # Limit to first 100 files for quick scan
+        eval "$FIND_CMD" | head -100 > "$TEMP_FILE_LIST" 2>/dev/null
+        
+        # Run YARA only on filtered files with Linux-focused rules
+        SCAN_OUTPUT=""
+        if [ -s "$TEMP_FILE_LIST" ]; then
+            # Create Linux-focused rules for quick scan
+            QUICK_RULES="/tmp/quick_linux_rules_$$.yar"
+            
+            # Use only most critical Linux rules for speed
+            cat "$YARA_RULES_DIR"/base_rules.yar \
+                "$YARA_RULES_DIR"/Linux_*.yar \
+                "$YARA_RULES_DIR"/*[Mm]iner*.yar \
+                "$YARA_RULES_DIR"/*[Ww]ebshell*.yar 2>/dev/null | \
+                grep -v "Windows\|Win32\|Win64" | head -10000 > "$QUICK_RULES" 2>/dev/null
+            
+            if [ -s "$QUICK_RULES" ]; then
+                RULE_COUNT=$(grep -c "^rule " "$QUICK_RULES" 2>/dev/null || echo "0")
+                log_info "Quick scan with $RULE_COUNT Linux rules..." | tee -a "$LOG_FILE"
+                
+                while IFS= read -r file; do
+                    if [ -f "$file" ]; then
+                        FILE_SCAN=$(timeout 1 yara -w "$QUICK_RULES" "$file" 2>/dev/null)
+                        if [ -n "$FILE_SCAN" ]; then
+                            SCAN_OUTPUT="${SCAN_OUTPUT}${FILE_SCAN}\n"
+                        fi
+                    fi
+                done < "$TEMP_FILE_LIST"
+                
+                rm -f "$QUICK_RULES"
+            fi
+        fi
+        
+        # Clean up temp file
+        rm -f "$TEMP_FILE_LIST"
+        
         SCAN_EXIT_CODE=$?
         
         if [ $SCAN_EXIT_CODE -eq 124 ]; then
@@ -72,8 +122,8 @@ log_info "Quick scan completed. Total threats found: $THREAT_COUNT" | tee -a "$L
 if [ $THREAT_COUNT -gt 0 ] || [ 1 -eq 1 ]; then
     log_warning "Sending threat alert email..." | tee -a "$LOG_FILE"
     
-    # Create HTML alert
-    TEMP_HTML="/tmp/daily_scan_alert_$(date +%Y%m%d_%H%M%S).html"
+    # Create HTML alert in logs directory instead of /tmp
+    TEMP_HTML="${YARA_LOGS_DIR}/daily_scan_alert_$(date +%Y%m%d_%H%M%S).html"
     create_html_header "YARA Daily Scan - Security Report" "daily_scan.sh" "2.1" > "$TEMP_HTML"
     
     if [ $THREAT_COUNT -gt 0 ]; then
