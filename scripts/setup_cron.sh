@@ -19,6 +19,9 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 MAILTO=soc@goline.ch
 
+# Hourly tasks
+0 * * * * root /opt/yara/scripts/daily_scan_quick.sh >/dev/null 2>&1
+
 # Daily tasks
 30 2 * * * root /opt/yara/scripts/daily_scan.sh >/dev/null 2>&1
 0 3 * * * root /opt/yara/scripts/update_rules.sh >/dev/null 2>&1
@@ -35,7 +38,8 @@ CRON_CONFIG
     
     chmod 644 /etc/cron.d/yara-wazuh
     
-    log_info "[OK] Created 7 cron jobs:"
+    log_info "[OK] Created 8 cron jobs:"
+    log_info "  - Quick scan every hour"
     log_info "  - Daily scan at 2:30 AM"
     log_info "  - Rules update at 3:00 AM"
     log_info "  - Quarantine cleanup at 4:00 AM"

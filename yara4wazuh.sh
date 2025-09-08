@@ -8,7 +8,17 @@
 # License: MIT
 # Build: 2025-09-08 - Linux-optimized, fixed false positives, enhanced quarantine
 
-readonly SCRIPT_VERSION="13.8"
+# Dynamic version management
+get_script_version() {
+    local version_file="/opt/yara/VERSION"
+    if [[ -f "$version_file" ]]; then
+        cat "$version_file" | tr -d '\n'
+    else
+        echo "13.8"  # Fallback version
+    fi
+}
+
+readonly SCRIPT_VERSION="$(get_script_version)"
 readonly SCRIPT_NAME="yara4wazuh"
 
 # YARA version configuration
@@ -402,6 +412,78 @@ create_all_scripts() {
 }
 
 # ============================================================================
+# SETUP ADVANCED RULE FEEDS
+# ============================================================================
+setup_advanced_feeds() {
+    log_section "Setting up advanced rule feeds"
+    
+    # Create VERSION file for dynamic versioning
+    echo "$SCRIPT_VERSION" > "${YARA_BASE_DIR}/VERSION"
+    log_info "[OK] Created VERSION file with v$SCRIPT_VERSION"
+    
+    # Install feed verification script
+    if [[ -f "${YARA_SCRIPTS_DIR}/verify_feeds.sh" ]]; then
+        log_info "Running feed verification..."
+        bash "${YARA_SCRIPTS_DIR}/verify_feeds.sh" 2>/dev/null || log_warning "Feed verification encountered issues"
+    fi
+    
+    # Download and install Elastic Security rules
+    log_info "Downloading Elastic Security rules..."
+    local ELASTIC_URL="https://github.com/elastic/protections-artifacts/archive/main.tar.gz"
+    local TEMP_ELASTIC="/tmp/elastic-rules-$(date +%s).tar.gz"
+    
+    if command -v wget >/dev/null 2>&1; then
+        wget -q -O "$TEMP_ELASTIC" "$ELASTIC_URL" 2>/dev/null
+    elif command -v curl >/dev/null 2>&1; then
+        curl -s -L -o "$TEMP_ELASTIC" "$ELASTIC_URL" 2>/dev/null
+    else
+        log_warning "Neither wget nor curl available for downloading feeds"
+        return 1
+    fi
+    
+    if [[ -f "$TEMP_ELASTIC" ]]; then
+        tar -xzf "$TEMP_ELASTIC" -C /tmp/ 2>/dev/null
+        local EXTRACTED_DIR=$(find /tmp -name "protections-artifacts-*" -type d | head -1)
+        if [[ -n "$EXTRACTED_DIR" ]]; then
+            find "$EXTRACTED_DIR" -name "*.yar" -exec cp {} "${YARA_RULES_DIR}/" \; 2>/dev/null
+            log_info "[OK] Installed Elastic Security rules"
+            rm -rf "$EXTRACTED_DIR" "$TEMP_ELASTIC"
+        fi
+    fi
+    
+    # Download Neo23x0 Signature Base (APT rules)
+    log_info "Downloading Neo23x0 APT detection rules..."
+    local NEO_URL="https://github.com/Neo23x0/signature-base/archive/master.tar.gz"
+    local TEMP_NEO="/tmp/neo-rules-$(date +%s).tar.gz"
+    
+    if command -v wget >/dev/null 2>&1; then
+        wget -q -O "$TEMP_NEO" "$NEO_URL" 2>/dev/null
+    elif command -v curl >/dev/null 2>&1; then
+        curl -s -L -o "$TEMP_NEO" "$NEO_URL" 2>/dev/null
+    fi
+    
+    if [[ -f "$TEMP_NEO" ]]; then
+        tar -xzf "$TEMP_NEO" -C /tmp/ 2>/dev/null
+        local NEO_EXTRACTED=$(find /tmp -name "signature-base-*" -type d | head -1)
+        if [[ -n "$NEO_EXTRACTED" ]]; then
+            find "$NEO_EXTRACTED" -name "*APT*.yar" -exec cp {} "${YARA_RULES_DIR}/" \; 2>/dev/null
+            log_info "[OK] Installed Neo23x0 APT detection rules"
+            rm -rf "$NEO_EXTRACTED" "$TEMP_NEO"
+        fi
+    fi
+    
+    # Create optimized rule set
+    if [[ -f "${YARA_SCRIPTS_DIR}/optimize_rules.sh" ]]; then
+        log_info "Creating optimized Linux rule set..."
+        bash "${YARA_SCRIPTS_DIR}/optimize_rules.sh" 2>/dev/null || log_warning "Rule optimization encountered issues"
+    fi
+    
+    # Count final rules
+    local total_rules=$(find ${YARA_RULES_DIR} -name "*.yar" -exec grep -h "^rule " {} \; 2>/dev/null | wc -l)
+    log_info "[OK] Advanced feeds setup complete: $total_rules total rules"
+}
+
+# ============================================================================
 # TEST INSTALLATION
 # ============================================================================
 test_installation() {
@@ -476,6 +558,7 @@ main_install() {
     "${YARA_SCRIPTS_DIR}/setup_cron.sh" setup 2>/dev/null || log_warning "Cron setup script not ready"
     
     create_all_scripts
+    setup_advanced_feeds
     test_installation
     
     log_section "Installation Complete!"
